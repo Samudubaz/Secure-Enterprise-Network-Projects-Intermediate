@@ -1,0 +1,29 @@
+Router(config)#hostname R-03
+
+IP Configure
+=================================================== 
+R-03(config)#interface GigabitEthernet0/0
+R-03(config-if)#des SW-03-Link
+R-03(config-if)#ip add 10.10.12.1 255.255.255.0
+R-03(config-if)#no shut
+R-03(config-if)#exit
+
+R-03(config)#interface Serial0/0/1
+R-03(config-if)#des R-02-Link
+R-03(config-if)#ip add 10.10.13.6 255.255.255.252
+R-03(config-if)#no shut
+R-03(config-if)#exit
+
+OSPF with MD 5 
+=====================================================
+R-03(config)#router ospf 10
+R-03(config-router)#router-id 3.3.3.3
+R-03(config-router)#network 10.10.12.0 0.0.0.255 area 0
+R-03(config-router)#network 10.10.13.4 0.0.0.3 area 0
+R-03(config-router)#passive-interface gigabitEthernet 0/0
+R-03(config-router)#area 0 authentication message-digest 
+R-03(config-router)#exit
+
+R-03(config)#interface Serial0/0/1
+R-03(config-if)#ip ospf message-digest-key 1 md5 MD5K3y@.
+R-03(config-if)#exit

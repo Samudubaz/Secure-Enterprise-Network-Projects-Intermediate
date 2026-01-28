@@ -1,0 +1,86 @@
+UP The Interfaces
+=========================================================
+Router(config)#hostname ISP
+
+ISP(config)#interface Serial0/0/0
+ISP(config-if)#des R-02-Link
+ISP(config-if)#clock rate 64000
+ISP(config-if)#ip add 100.100.10.1 255.255.255.252
+ISP(config-if)#no shut
+ISP(config-if)#exit
+
+ISP(config)#interface Serial0/0/1
+ISP(config-if)#des B-01-Link
+ISP(config-if)#clock rate 64000
+ISP(config-if)#ip add 100.100.10.5 255.255.255.252
+ISP(config-if)#no shut
+ISP(config-if)#exit
+
+
+
+
+OSPF Routing with Authentication
+=========================================================
+ISP(config)#router ospf 10
+ISP(config-router)#router-id 3.3.3.3
+ISP(config-router)#network 100.100.10.4 0.0.0.3 area 0
+ISP(config-router)#network 100.100.10.0 0.0.0.3 area 0
+ISP(config-router)#area 0 authentication message-digest 
+ISP(config-router)#exit
+
+ISP(config)#interface Serial0/0/1
+ISP(config-if)#ip ospf message-digest-key 1 md5 MD5OSAK 
+ISP(config-if)#exit
+
+ISP(config)#interface Serial0/0/0
+ISP(config-if)#ip ospf message-digest-key 1 md5 MD5OSAK 
+ISP(config-if)#exit
+
+
+
+
+NTP Configurations
+=========================================================
+ISP(config)#ntp server 192.168.12.10
+ISP(config)#ntp trusted-key 2
+ISP(config)#ntp authentication-key 2 md5 NTP@Cisco
+ISP(config)#ntp update-calendar 
+ISP(config)#exit
+
+
+
+
+Basic Configurations
+=========================================================
+ISP(config)#banner motd *
+Enter TEXT message.  End with the character '*'.
+####################################################### 
+This is Secure area. Please enter your Authentication.  
+####################################################### *
+ISP(config)#exit
+
+
+ISP(config)#enable secret Samudu@2025.1k
+
+ISP(config)#line console 0
+ISP(config-line)#password sAmudu@2025.1k
+ISP(config-line)#login
+ISP(config-line)#exit
+
+ISP(config)#ip domain-name sltsc.lk
+ISP(config)#username admin secret SAmudu@s$H.1k
+ISP(config)#crypto key generate RSA
+How many bits in the modulus [512]: 2048
+ISP(config)#ip ssh version 2
+
+ISP(config)#line vty 0                                
+ISP(config-line)#transport input ssh                  
+ISP(config-line)#login local                          
+ISP(config-line)#exec-timeout 10
+ISP(config-line)#exit
+
+ISP(config)#service password-encryption 
+
+ISP(config)#security passwords min-length 8
+
+ISP(config)#login block-for 360 attempts 3 within 60

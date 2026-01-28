@@ -1,0 +1,89 @@
+UP The Interfaces
+=========================================================
+Router(config)#hostname B-02
+
+B-02(config)#interface GigabitEthernet0/0
+B-02(config-if)#des SWB-02-Link
+B-02(config-if)#ip add 10.10.11.1 255.255.255.0
+B-02(config-if)#no shut
+B-02(config-if)#exit
+
+B-02(config)#interface GigabitEthernet0/1
+B-02(config-if)#des SWB-03-Link
+B-02(config-if)#ip add 10.10.12.1 255.255.255.0
+B-02(config-if)#no shut
+B-02(config-if)#exit
+
+B-02(config)#interface Serial0/0/0
+B-02(config-if)#des B-01-Link
+B-02(config-if)#ip add 10.10.13.2 255.255.255.252
+B-02(config-if)#no shut
+B-02(config-if)#exit
+
+
+
+
+OSPF Routing with Authentication
+=========================================================
+B-02(config)#router ospf 10
+B-02(config-router)#router-id 5.5.5.5
+B-02(config-router)#network 10.10.11.0 0.0.0.255 area 0
+B-02(config-router)#network 10.10.12.0 0.0.0.255 area 0
+B-02(config-router)#network 10.10.13.0 0.0.0.3 area 0
+B-02(config-router)#passive-interface gigabitEthernet 0/0
+B-02(config-router)#passive-interface gigabitEthernet 0/1
+B-02(config-router)#area 0 authentication message-digest 
+B-02(config-router)#exit
+
+B-02(config)#interface Serial0/0/0
+B-02(config-if)#ip ospf message-digest-key 1 md5 MD5OSAK 
+B-02(config-if)#exit
+
+
+
+
+NTP Configurations
+=========================================================
+B-02(config)#ntp server 192.168.12.10
+B-02(config)#ntp trusted-key 2
+B-02(config)#ntp authentication-key 2 md5 NTP@Cisco
+B-02(config)#ntp update-calendar 
+B-02(config)#exit
+
+
+
+
+Basic Configurations
+=========================================================
+B-02(config)#banner motd *
+Enter TEXT message.  End with the character '*'.
+####################################################### 
+This is Secure area. Please enter your Authentication.  
+####################################################### *
+R-02(config)#exit
+
+
+B-02(config)#enable secret Samudu@2025.1k
+
+B-02(config)#line console 0
+B-02(config-line)#password sAmudu@2025.1k
+B-02(config-line)#login
+B-02(config-line)#exit
+
+B-02(config)#ip domain-name sltsc.lk
+B-02(config)#username admin secret SAmudu@s$H.1k
+B-02(config)#crypto key generate RSA
+How many bits in the modulus [512]: 2048
+B-02(config)#ip ssh version 2
+
+B-02(config)#line vty 0                                
+B-02(config-line)#transport input ssh                  
+B-02(config-line)#login local                          
+B-02(config-line)#exec-timeout 10
+B-02(config-line)#exit
+
+B-02(config)#service password-encryption 
+
+B-02(config)#security passwords min-length 8
+
+B-02(config)#login block-for 360 attempts 3 within 60

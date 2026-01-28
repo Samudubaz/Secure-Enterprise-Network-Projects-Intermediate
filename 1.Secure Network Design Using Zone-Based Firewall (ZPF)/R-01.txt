@@ -1,0 +1,62 @@
+UP The Interfaces
+=========================================================================
+Router(config)#hostname R-01
+
+R-01(config)#interface GigabitEthernet0/0
+R-01(config-if)#des SW-01-LINK
+R-01(config-if)#ip add 192.168.1.1 255.255.255.0
+R-01(config-if)#no shut
+R-01(config-if)#exit
+
+
+R-01(config)#interface GigabitEthernet0/1
+R-01(config-if)#des SW-02-LINK
+R-01(config-if)#ip add 192.168.2.1 255.255.255.0
+R-01(config-if)#no shut
+R-01(config-if)#exit
+
+
+R-01(config)#interface Serial0/0/0
+R-01(config-if)#des R-02-LINK
+R-01(config-if)#ip add 10.1.1.2 255.255.255.252
+R-01(config-if)#no shut
+R-01(config-if)#exit
+
+OSPF Routing
+=============================================================================
+R-01(config)#router ospf 10
+R-01(config-router)#router-id 1.1.1.1
+R-01(config-router)#network 192.168.1.0 0.0.0.255 area 0
+R-01(config-router)#network 192.168.2.0 0.0.0.255 area 0
+R-01(config-router)#network 10.1.1.0 0.0.0.3 area 0
+R-01(config-router)#passive-interface gigabitEthernet 0/0
+R-01(config-router)#passive-interface gigabitEthernet 0/1
+R-01(config-router)#exit
+
+Basic Security
+================================================================================
+R-01(config)#line console 0
+R-01(config-line)#password ciscoconpa55
+R-01(config-line)#login
+R-01(config-line)#exit
+
+R-01(config)#line vty 0
+R-01(config-line)#password ciscovtypa55
+R-01(config-line)#login
+R-01(config-line)#exit
+
+R-01(config)#enable password ciscoenpa55
+
+R-01(config)#ip domain-name sltsc.lk
+R-01(config)#username admin secret Adminpas55s
+R-01(config)#crypto key generate rsa 
+How many bits in the modulus [512]: 1024
+R-01(config)#ip ssh version 2
+
+R-01(config)#line vty 0
+R-01(config-line)#transport input ssh
+R-01(config-line)#login local 
+R-01(config-line)#exec-timeout 10
+R-01(config-line)#exit 
+
+R-01(config)#do wr

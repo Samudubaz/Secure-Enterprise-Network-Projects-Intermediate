@@ -1,0 +1,137 @@
+UP The Interfaces
+=========================================================================
+Router(config)#hostname R-02
+
+R-02(config)#interface Serial0/0/0
+R-02(config-if)#des R-01-LINK
+R-02(config-if)#clock rate 64000
+R-02(config-if)#ip add 10.1.1.1 255.255.255.252
+R-02(config-if)#no shut
+R-02(config-if)#exit
+
+R-02(config)#interface Serial0/0/1
+R-02(config-if)#des R-03-LINK
+R-02(config-if)#clock rate 64000
+R-02(config-if)#ip add 10.2.2.1 255.255.255.252
+R-02(config-if)#no shut
+R-02(config-if)#exit
+
+OSPF Routing
+=============================================================================
+R-02(config)#router ospf 10
+R-02(config-router)#router-id 2.2.2.2
+R-02(config-router)#network 10.1.1.0 0.0.0.3 area 0
+R-02(config-router)#network 10.2.2.0 0.0.0.3 area 0
+R-02(config-router)#exit
+
+
+Part 2: Create the Firewall Zones on R2
+==============================================================================
+
+Enable Security License
+--------------------------
+R-02(config)#license boot module c1900 technology-package securityk9  
+
+Create an internal zone
+------------------------
+R-02(config)#zone security IN-ZONE
+R-02(config-sec-zone)#exit
+
+Create an external zone
+-----------------------
+R-02(config)#zone security OUT-ZONE
+R-02(config-sec-zone)#exit
+
+Part 3: Identify Traffic Using a Class-Map 
+==============================================================================
+
+Create an ACL that defines internal traffic.
+-------------------------------------------- 
+R-02(config)#ip access-list extended 101
+
+R-02(config-ext-nacl)#permit icmp host 192.168.1.10 any echo
+R-02(config-ext-nacl)#permit tcp host 192.168.1.10 any eq 80
+R-02(config-ext-nacl)#permit tcp host 192.168.1.10 any eq 443
+R-02(config-ext-nacl)#permit tcp host 192.168.1.10 any eq 53
+
+R-02(config-ext-nacl)#permit icmp host 192.168.1.11 any echo
+
+R-02(config-ext-nacl)#permit icmp host 192.168.2.10 any echo
+R-02(config-ext-nacl)#permit tcp host 192.168.2.10 any eq 80
+R-02(config-ext-nacl)#permit tcp host 192.168.2.10 any eq 443
+R-02(config-ext-nacl)#permit tcp host 192.168.2.10 any eq 53
+
+R-02(config-ext-nacl)#permit tcp host 192.168.2.11 any eq 53
+R-02(config-ext-nacl)#permit tcp host 192.168.2.11 any eq 80
+R-02(config-ext-nacl)#permit tcp host 192.168.2.11 any eq 443
+
+R-02(config-ext-nacl)#exit
+
+Create a class map referencing the internal traffic ACL
+--------------------------------------------------------
+R-02(config)#class-map type inspect IN-NET-CLASS-MAP
+R-02(config-cmap)#match access-group 101
+R-02(config-cmap)#exit
+
+Part 4: Specify Firewall Policies
+==============================================================================
+R-02(config)#policy-map type inspect IN-2-OUT-PMAP
+R-02(config-pmap)#class type inspect IN-NET-CLASS-MAP
+R-02(config-pmap-c)#inspect 
+R-02(config-pmap-c)#exit
+
+
+Part 5: Apply Firewall Policies 
+==============================================================================
+R-02(config)#zone-pair security IN-2-OUT-ZPAIR source IN-ZONE destination OUT-ZONE
+R-02(config-sec-zone-pair)#service-policy type inspect IN-2-OUT-PMAP
+R-02(config-sec-zone-pair)#exit
+
+Assign Interfaces to Security Zones
+--------------------------------------
+R-02(config)#interface Serial0/0/0
+R-02(config-if)#zone-member security IN-ZONE
+R-02(config-if)#exit
+
+R-02(config)#interface Serial0/0/1	
+R-02(config-if)#zone-member security OUT-ZONE
+R-02(config-if)#exit
+
+Basic Security
+================================================================================
+R-02(config)#line console 0
+R-02(config-line)#password ciscoconpa55
+R-02(config-line)#login
+R-02(config-line)#exit
+
+R-02(config)#line vty 0
+R-02(config-line)#password ciscovtypa55
+R-02(config-line)#login
+R-02(config-line)#exit
+
+R-02(config)#enable password ciscoenpa55
+
+R-02(config)#ip domain-name sltsc.lk
+R-02(config)#username admin secret Adminpas55s
+R-02(config)#crypto key generate rsa 
+How many bits in the modulus [512]: 1024
+R-02(config)#ip ssh version 2
+
+R-02(config)#line vty 0
+R-02(config-line)#transport input ssh
+R-02(config-line)#login local 
+R-02(config-line)#exec-timeout 10
+R-02(config-line)#exit
+
+
+R-02(config)#do wr
+
+
+
+
+
+
+
+
+
+

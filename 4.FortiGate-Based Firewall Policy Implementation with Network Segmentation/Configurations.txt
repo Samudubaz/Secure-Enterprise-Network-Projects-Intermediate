@@ -1,0 +1,126 @@
+Steps Done
+--------------------
+1.Implement VLANs in two switches
+2.Config two ISP Routers (Up the interfaces)
+3.Config FW interfaces in HO and BR
+4.Implement OSPF routing
+5.Apply Routing Policies to a Success Routing
+6.Create Users in FW (Full access and View Only)
+7.Config ADDS and DHCP SVR
+
+ADD Server
+----------
+1.Implement a Static IP to the Server
+2.Change the Name of the Server
+3.Change the Date and Time
+4.Install ADDS Service (SVR Pass-Vtc12345678 , Backup Pass-Admin123,)
+5.Add a Client PC to the Domain (PC Pass-Vtc123
+	I.First Enabled Local Admin in the Client
+	II.Implement a Static Ip configuration for now
+	III.Change the PC name
+	IV.Connect the PC to the Domain
+
+
+
+IT SW
+-------------------------------
+
+Switch(config)#hostname IT_SW
+
+IT_SW(config)#vlan 10
+IT_SW(config-vlan)#name IT_Department
+IT_SW(config-vlan)#exit
+
+IT_SW(config)#interface ethernet 0/1
+IT_SW(config-if)#switchport mode access
+IT_SW(config-if)#switchport access vlan 10
+IT_SW(config-if)#exit
+
+IT_SW(config)#interface ethernet 0/0
+IT_SW(config-if)#switchport mode trunk
+IT_SW(config-if)#switchport trunk encapsulation dot1q
+IT_SW(config-if)#switchport trunk allowed vlan all
+IT_SW(config-if)#exit
+
+
+HR SW
+-------------------------------
+Switch(config)#hostname HR_SW
+
+HR_SW(config)#vlan 20
+HR_SW(config-vlan)#name HR_Department
+HR_SW(config-vlan)#exit
+
+HR_SW(config)#interface ethernet 0/1
+HR_SW(config-if)#switchport mode access
+HR_SW(config-if)#switchport access vlan 20
+HR_SW(config-if)#exit
+
+HR_SW(config)#interface ethernet 0/0
+HR_SW(config-if)#switchport mode trunk
+HR_SW(config-if)#switchport trunk encapsulation dot1q
+HR_SW(config-if)#switchport trunk allowed vlan all
+HR_SW(config-if)#exit
+
+
+ISP R01
+-------------------------------
+Router(config)#hostname ISP_R01
+
+ISP_R01(config)#interface ethernet 0/0
+ISP_R01(config-if)#description FW_HO_Link
+ISP_R01(config-if)#ip add 172.16.16.18 255.255.255.252
+ISP_R01(config-if)#no shut
+ISP_R01(config-if)#exit
+
+ISP_R01(config)#interface ethernet 0/1             
+ISP_R01(config-if)#description ISP_R2_Link            
+ISP_R01(config-if)#ip add 10.10.10.9 255.255.255.252
+ISP_R01(config-if)#no shut
+ISP_R01(config-if)#exit
+
+Static Route (Didn't work)
+--------------------------
+ISP_R01(config)#ip route 192.168.1.0 255.255.255.0 172.16.16.17
+ISP_R01(config)#ip route 192.168.2.0 255.255.255.0 172.16.16.17
+ISP_R01(config)#ip route 192.168.100.0 255.255.255.0 172.16.16.17
+ISP_R01(config)#ip route 192.168.120.0 255.255.255.0 10.10.10.10 
+
+OSPF Route
+---------------------------
+ISP_R01(config)#router ospf 1
+ISP_R01(config-router)#router-id 2.2.2.2
+ISP_R01(config-router)#network 172.16.16.16 0.0.0.3 area 0
+ISP_R01(config-router)#network 10.10.10.8 0.0.0.3 area 0
+
+
+
+ISP R02
+-------------------------------
+Router(config)#hostname ISP_R2
+
+ISP_R2(config)#interface ethernet 0/0
+ISP_R2(config-if)#description ISP_R01_Link
+ISP_R2(config-if)#ip add 10.10.10.10 255.255.255.252
+ISP_R2(config-if)#no shut
+ISP_R2(config-if)#exit
+
+ISP_R2(config)#interface ethernet 0/1            
+ISP_R2(config-if)#description BR_FW_Link            
+ISP_R2(config-if)#ip add 172.16.20.9 255.255.255.252
+ISP_R2(config-if)#no shut
+ISP_R2(config-if)#exit
+
+Static Route (Didn't work)
+--------------------------
+ISP_R2(config)#ip route 192.168.1.0 255.255.255.0 10.10.10.9
+ISP_R2(config)#ip route 192.168.2.0 255.255.255.0 10.10.10.9
+ISP_R2(config)#ip route 192.168.100.0 255.255.255.0 10.10.10.9
+ISP_R2(config)#ip route 192.168.120.0 255.255.255.0 172.16.20.10
+
+OSPF Route
+---------------------------
+ISP_R2(config)#router ospf 1
+ISP_R2(config-router)#router-id 3.3.3.3
+ISP_R2(config-router)#network 10.10.10.8 0.0.0.3 area 0
+ISP_R2(config-router)#network 172.16.20.8 0.0.0.3 area 0

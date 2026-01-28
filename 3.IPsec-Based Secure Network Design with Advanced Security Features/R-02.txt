@@ -1,0 +1,143 @@
+UP The Interfaces
+=========================================================
+Router(config)#hostname R-02
+
+R-02(config)#interface GigabitEthernet0/0
+R-02(config-if)#des SW-03-Link
+R-02(config-if)#ip add 192.168.12.1 255.255.255.0
+R-02(config-if)#no shut
+R-02(config-if)#exit
+
+R-02(config)#interface Serial0/0/0
+R-02(config-if)#des ISP-Link
+R-02(config-if)#ip add 100.100.10.2 255.255.255.252
+R-02(config-if)#no shut
+R-02(config-if)#exit
+
+
+R-02(config)#interface Serial0/0/1
+R-02(config-if)#des R-01-Link
+R-02(config-if)#clock rate 64000
+R-02(config-if)#ip add 192.168.13.2 255.255.255.252
+R-02(config-if)#no shut
+R-02(config-if)#exit
+
+
+
+
+OSPF Routing with Authentication
+=========================================================
+R-02(config)#router ospf 10
+R-02(config-router)#router-id 2.2.2.2
+R-02(config-router)#network 192.168.12.0 0.0.0.255 area 0
+R-02(config-router)#network 100.100.10.0 0.0.0.3 area 0
+R-02(config-router)#network 192.168.13.0 0.0.0.3 area 0
+R-02(config-router)#passive-interface gigabitEthernet 0/0
+R-02(config-router)#area 0 authentication message-digest 
+R-02(config-router)#exit
+
+R-02(config)#interface Serial0/0/1
+R-02(config-if)#ip ospf message-digest-key 1 md5 MD5OSAK 
+R-02(config-if)#exit
+
+R-02(config)#interface Serial0/0/0
+R-02(config-if)#ip ospf message-digest-key 1 md5 MD5OSAK 
+R-02(config-if)#exit
+
+
+
+
+
+Implement IPSEC VPN TUNNEL
+===========================================================================================
+
+Enable the Security Technology package
+================================================
+R-02(config)#license boot module c1900 technology-package securityk9 
+
+Identify Interesting traffic  on R-02
+=================================================
+R-02(config)#access-list 100 permit ip 192.168.10.0 0.0.0.255 10.10.10.0 0.0.0.255
+R-02(config)#access-list 100 permit ip 192.168.10.0 0.0.0.255 10.10.11.0 0.0.0.255
+R-02(config)#access-list 100 permit ip 192.168.10.0 0.0.0.255 10.10.12.0 0.0.0.255
+
+R-02(config)#access-list 100 permit ip 192.168.11.0 0.0.0.255 10.10.10.0 0.0.0.255
+R-02(config)#access-list 100 permit ip 192.168.11.0 0.0.0.255 10.10.11.0 0.0.0.255
+R-02(config)#access-list 100 permit ip 192.168.11.0 0.0.0.255 10.10.12.0 0.0.0.255
+
+R-02(config)#access-list 100 permit ip 192.168.12.0 0.0.0.255 10.10.10.0 0.0.0.255
+R-02(config)#access-list 100 permit ip 192.168.12.0 0.0.0.255 10.10.11.0 0.0.0.255
+R-02(config)#access-list 100 permit ip 192.168.12.0 0.0.0.255 10.10.12.0 0.0.0.255
+
+Configure the IKE Phase 1 ISAKMP policy on R-02
+=================================================
+R-02(config)#crypto isakmp policy 1
+R-02(config-isakmp)#encryption aes 256
+R-02(config-isakmp)#authentication pre-share 
+R-02(config-isakmp)#group 5
+R-02(config-isakmp)#exit 
+R-02(config)#crypto isakmp key vpnpa55 address 100.100.10.6
+
+Configure the IKE Phase 2 ISAKMP policy on R-02
+=================================================
+R-02(config)#crypto ipsec transform-set IP-Sec esp-aes esp-sha-hmac
+
+R-02(config)#crypto map Site-Map 1 ipsec-isakmp
+R-02(config-crypto-map)#description VPN connection to B-02
+R-02(config-crypto-map)#set peer 100.100.10.6
+R-02(config-crypto-map)#set transform-set IP-Sec
+R-02(config-crypto-map)#match address 100
+R-02(config-crypto-map)#exit
+
+Configure the crypto map on the outgoing interface
+=====================================================
+R-02(config)#interface s0/0/0
+R-02(config-if)#crypto map Site-Map
+R-02(config-if)#exit
+
+
+
+
+
+NTP Configurations
+=========================================================
+R-02(config)#ntp server 192.168.12.10
+R-02(config)#ntp trusted-key 2
+R-02(config)#ntp authentication-key 2 md5 NTP@Cisco
+R-02(config)#ntp update-calendar 
+R-02(config)#exit
+
+Basic Configurations
+=========================================================
+R-02(config)#banner motd *
+Enter TEXT message.  End with the character '*'.
+####################################################### 
+This is Secure area. Please enter your Authentication.  
+####################################################### *
+R-02(config)#exit
+
+
+R-02(config)#enable secret Samudu@2025.1k
+
+R-02(config)#line console 0
+R-02(config-line)#password sAmudu@2025.1k
+R-02(config-line)#login
+R-02(config-line)#exit
+
+R-02(config)#ip domain-name sltsc.lk
+R-02(config)#username admin secret SAmudu@s$H.1k
+R-02(config)#crypto key generate RSA
+How many bits in the modulus [512]: 2048
+R-02(config)#ip ssh version 2
+
+R-02(config)#line vty 0                                
+R-02(config-line)#transport input ssh                  
+R-02(config-line)#login local                          
+R-02(config-line)#exec-timeout 10
+R-02(config-line)#exit
+
+R-02(config)#service password-encryption 
+
+R-02(config)#security passwords min-length 8
+
+R-02(config)#login block-for 360 attempts 3 within 60

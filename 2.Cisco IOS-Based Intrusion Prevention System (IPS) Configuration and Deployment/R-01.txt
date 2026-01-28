@@ -1,0 +1,102 @@
+Router(config)#hostname R-01
+
+IP Configure 
+===========================================
+R-01(config)#interface GigabitEthernet0/0
+R-01(config-if)#des SW-01-Link
+R-01(config-if)#ip add 10.10.10.1 255.255.255.0
+R-01(config-if)#no shut
+R-01(config-if)#exit
+
+R-01(config)#interface GigabitEthernet0/1
+R-01(config-if)#des SW-02-Link
+R-01(config-if)#ip add 10.10.11.1 255.255.255.0
+R-01(config-if)#no shut
+R-01(config-if)#exit
+
+R-01(config)#interface Serial0/0/0
+R-01(config-if)#des R-02-Link
+R-01(config-if)#ip add 10.10.13.2 255.255.255.252
+R-01(config-if)#no shut
+R-01(config-if)#exit
+
+OSPF with MD 5
+===========================================
+R-01(config)#router ospf 10
+R-01(config-router)#router-id 1.1.1.1
+R-01(config-router)#network 10.10.10.0 0.0.0.255 area 0
+R-01(config-router)#network 10.10.11.0 0.0.0.255 area 0
+R-01(config-router)#network 10.10.13.0 0.0.0.3 area 0
+R-01(config-router)#passive-interface gigabitEthernet 0/0
+R-01(config-router)#passive-interface gigabitEthernet 0/1
+R-01(config-router)#area 0 authentication message-digest 
+R-01(config-router)#exit
+
+R-01(config)#interface Serial0/0/0
+R-01(config-if)#ip ospf message-digest-key 1 md5 MD5K3y@.
+R-01(config-if)#exit
+
+==========================================================================================================================================
+IPS And IDS Configurations
+====================================================================================
+R-01(config)#hostname IPS
+
+Enable IOS to IPS
+====================
+IPS(config)#license boot module c1900 technology-package securityk9 
+
+Create IPS Configurations Directory in Flash
+=============================================
+IPS#mkdir IPSDir
+
+IPS Storage Configuration
+=============================================
+IPS(config)#ip ips config location flash:IPSDir
+
+IPS Signature Policy Definition
+=============================================
+IPS(config)#ip ips name IOSIPS
+
+IPS Logging and Notifications
+=============================================
+IPS(config)#ip ips notify log
+IPS(config)#service timestamps log datetime msec 
+IPS(config)#logging host 10.10.10.10
+
+IPS Signature Category Configuration
+=============================================
+IPS(config)#ip ips signature-category 
+IPS(config-ips-category)#category all
+IPS(config-ips-category-action)#retired true 
+IPS(config-ips-category-action)#exit
+
+Enabling Specific Signature Categories
+=============================================
+IPS(config-ips-category)#category ios_ips basic
+IPS(config-ips-category-action)#retired false
+IPS(config-ips-category-action)#exit
+IPS(config-ips-category)#exit
+
+Apply IPS Policy to Interface
+=============================================
+IPS(config)#interface gigabitEthernet 0/0
+IPS(config-if)#ip ips IOSIPS out
+IPS(config-if)#exit
+
+Signature Status Configuration
+=============================================
+IPS(config)#ip ips signature-definition 
+IPS(config-sigdef)#signature 2004 0
+IPS(config-sigdef-sig)#status
+IPS(config-sigdef-sig-status)#retired false 
+IPS(config-sigdef-sig-status)#enabled true
+IPS(config-sigdef-sig-status)#exit
+
+Configure Signature Actions
+=============================================
+IPS(config-sigdef-sig)#engine
+IPS(config-sigdef-sig-engine)#event-action produce-alert 
+IPS(config-sigdef-sig-engine)#event-action deny-packet-inline 
+IPS(config-sigdef-sig-engine)#exit
+IPS(config-sigdef-sig)#exit
+IPS(config-sigdef)#exit
